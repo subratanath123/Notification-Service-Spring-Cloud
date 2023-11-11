@@ -1,0 +1,36 @@
+server:
+  port: 8007
+
+spring:
+  application:
+    name: NotificationService
+
+  cloud:
+    bootstrap:
+      enabled: true
+
+    config:
+      profile: prod
+      discovery:
+        enabled: true
+        service-id: ConfigService
+      enabled: true
+
+  config:
+    import: optional:configserver:http://api.befriendmehelps.com:8887
+
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: http://api.befriendmehelps.com:8761/eureka/
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud: DEBUG
+
