@@ -8,10 +8,10 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
 @SpringBootApplication
 @EnableRedisRepositories
 @EnableDiscoveryClient
-public class ResourceServerApplication {
+public class NotificationServerApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ResourceServerApplication.class, args);
+        SpringApplication.run(NotificationServerApplication.class, args);
     }
 
 }

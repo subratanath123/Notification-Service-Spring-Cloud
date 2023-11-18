@@ -1,8 +1,7 @@
 package net.befriendme.config;
 
-import net.befriendme.entity.user.event.Event;
-import net.befriendme.service.RedisConsumerService;
-import net.befriendme.service.RedisEventMessageProcessor;
+import net.befriendme.service.redis.RedisConsumerService;
+import net.befriendme.service.redis.RedisEventMessageProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -14,17 +13,15 @@ import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.connection.stream.ReadOffset;
 import org.springframework.data.redis.connection.stream.StreamOffset;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.data.redis.stream.StreamListener;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer;
+import org.springframework.data.redis.stream.StreamMessageListenerContainer.StreamMessageListenerContainerOptions;
 import org.springframework.data.redis.stream.Subscription;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
+
+import static java.net.InetAddress.getLocalHost;
 
 @Configuration
 public class RedisConfiguration {
@@ -54,45 +51,34 @@ public class RedisConfiguration {
     }
 
     @Bean
-    public Subscription subscription(RedisConnectionFactory connectionFactory) throws UnknownHostException {
-        redisConsumerService.createConsumerGroupIfNotExists(connectionFactory, "new-user", "notification-server-group-1");
+    public Subscription beFriendMeRedisStreamSubscription(RedisConnectionFactory connectionFactory) throws UnknownHostException {
+        String streamKey = "event:push:befriendme";
+        redisConsumerService.createConsumerGroupIfNotExists(connectionFactory, streamKey, "notification-server-group-1");
 
-        StreamOffset<String> streamOffset = StreamOffset.create("new-user", ReadOffset.lastConsumed());
+        StreamOffset<String> streamOffset = StreamOffset.create(streamKey, ReadOffset.lastConsumed());
 
-        StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String,
-                ObjectRecord<String, Event>> options = StreamMessageListenerContainer
-                .StreamMessageListenerContainerOptions
-                .builder()
-                .pollTimeout(Duration.ofMillis(100))
-                .targetType(Event.class)
-                .build();
+        StreamMessageListenerContainerOptions<String, ObjectRecord<String, String>> options =
+                StreamMessageListenerContainerOptions
+                        .builder()
+                        .pollTimeout(Duration.ofMillis(100))
+                        .targetType(String.class)
+                        .build();
 
-        StreamMessageListenerContainer<String, ObjectRecord<String, Event>> container =
+        StreamMessageListenerContainer<String, ObjectRecord<String, String>> container =
                 StreamMessageListenerContainer
                         .create(connectionFactory, options);
 
         Subscription subscription =
-                container.receive(Consumer.from("notification-server-group-1", InetAddress.getLocalHost().getHostName()),
-                        streamOffset, newUserMessageProcessor());
+                container.receive(Consumer.from("notification-server-group-1", getLocalHost().getHostName()),
+                        streamOffset, beFriendMeMessageEventProcessor());
 
         container.start();
         return subscription;
     }
 
     @Bean
-    public StreamListener<String, ObjectRecord<String, Event>> newUserMessageProcessor() {
+    public StreamListener<String, ObjectRecord<String, String>> beFriendMeMessageEventProcessor() {
         return new RedisEventMessageProcessor();
-    }
-
-    @Bean
-    public RedisTemplate<String, Event> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, Event> redisTemplate = new RedisTemplate<>();
-
-        redisTemplate.setConnectionFactory(redisConnectionFactory);
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Event.class));
-
-        return redisTemplate;
     }
 
 }

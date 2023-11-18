@@ -42,6 +42,9 @@ dependencies {// https://mvnrepository.com/artifact/javax.servlet/javax.servlet-
 	compileOnly group: 'org.projectlombok', name: 'lombok', version: '0.11.0'
 	annotationProcessor 'org.projectlombok:lombok:1.18.22'
 
+	implementation 'com.google.firebase:firebase-admin:9.2.0'
+
+
 
 	implementation group: 'com.graphql-java', name: 'graphql-java-tools', version: '5.2.4'
 	implementation group: 'com.graphql-java', name: 'graphql-spring-boot-starter', version: '5.0.2'

@@ -1,4 +1,4 @@
-package net.befriendme.entity.user.event;
+package net.befriendme.entity.event;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -7,7 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -18,12 +18,14 @@ public class Event implements Serializable {
     @Id
     private String eventId;
 
-    @NotEmpty
-    @NotNull
+    private String resourceId;
+
+    private String message;
+
+    private String externalUrl;
+
     private String eventType;
 
-    @NotEmpty
-    @NotNull
     private String domain;
 
     @NotEmpty
@@ -32,16 +34,16 @@ public class Event implements Serializable {
 
     @NotEmpty
     @NotNull
-    private Instant timestamp;
-
-    @NotEmpty
-    @NotNull
     private String version;
 
     @NotEmpty
     @NotNull
-    private Map<String, Object> payload;
+    private Map<String, String> payload;
     private Map<String, String> metadata;
+
+    @NotEmpty
+    private List<Audience> audienceList;
+    private List<String> targetUserList;
 
     public Event() {
         this.eventId = UUID.randomUUID().toString();

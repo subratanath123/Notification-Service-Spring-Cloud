@@ -1,7 +1,8 @@
-package net.befriendme.api.rest.business;
+package net.befriendme.api.rest.event;
 
 import jakarta.validation.Valid;
-import net.befriendme.entity.user.event.Event;
+import net.befriendme.entity.event.Event;
+import net.befriendme.service.common.EventToPushMessagingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
@@ -12,28 +13,33 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static net.befriendme.utils.SerializationUtils.getSerializedJson;
+
 @RestController
-@RequestMapping("/v1/publish-event")
+@RequestMapping("/v1")
 public class EventPublishController {
 
     @Autowired
     private MongoTemplate mongoTemplate;
 
     @Autowired
-    private RedisTemplate<String, Event> redisTemplate;
+    private RedisTemplate<String, String> redisTemplate;
 
-    @PostMapping("/basic-information")
-    public Event updateBasicInformation(@Valid @RequestBody Event event) {
+    @Autowired
+    private EventToPushMessagingService eventToPushMessagingService;
 
-        publishEventToRedis(event);
+    @PostMapping("/publish-event")
+    public Event publish(@Valid @RequestBody Event event) {
+
+        publishEventToRedis(event, "event:push:" + event.getEventSource());
 
         return mongoTemplate.insert(event);
     }
 
-    private void publishEventToRedis(Event event) {
-        ObjectRecord<String, Event> record = StreamRecords.newRecord()
-                .ofObject(event)
-                .withStreamKey("event:" + event.getEventSource() + ":" + event.getDomain());
+    private void publishEventToRedis(Event event, String streamKey) {
+        ObjectRecord<String, String> record = StreamRecords.newRecord()
+                .ofObject(getSerializedJson(event))
+                .withStreamKey(streamKey);
 
         redisTemplate.opsForStream().add(record);
     }
