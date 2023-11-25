@@ -5,6 +5,7 @@ import net.befriendme.service.common.EventToPushMessagingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.stream.StreamListener;
@@ -23,10 +24,15 @@ public class RedisEventMessageProcessor implements StreamListener<String, Object
     @Autowired
     private EventToPushMessagingService eventToPushMessagingService;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     @Override
     public void onMessage(ObjectRecord<String, String> record) {
 
-        eventToPushMessagingService.sendEventAsPushNotification(getDeserializedObject(record.getValue(), Event.class));
+        Event event = getDeserializedObject(record.getValue(), Event.class);
+
+        eventToPushMessagingService.sendEventAsPushNotification(event);
 
         redisBaseEntityRedisTemplate
                 .opsForStream()

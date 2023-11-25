@@ -92,6 +92,12 @@ public class EventToPushMessagingService {
         pushData.put("message", event.getMessage());
         pushData.put("externalUrl", event.getExternalUrl());
 
+        if (!CollectionUtils.isEmpty(event.getPayload())) {
+            pushData.putAll(event.getPayload());
+        }
+
+        pushData.entrySet().removeIf(entry -> entry.getValue() == null);
+
         return pushData;
     }
 
